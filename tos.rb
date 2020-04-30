@@ -20,6 +20,12 @@ class Stone < Image
 		@attr = 0
 		@dis = 0
 	end
+	
+	def chang(mod = 0)
+		if mod == 0
+			@img = Gosu::Image.new("image/stone_n.png")
+		end
+	end
 	def drag(x,y)
 		@x,@y = x-@w/2,y-@h/2
 	end
@@ -108,6 +114,7 @@ class Board
 			temp = DFS_combo(i,[])
 			@combos << temp if !temp.empty?
 		end
+		puts "共#{@combos.length}組,#{@combos}"
 		return "共#{@combos.length}組,#{@combos}"
 	end
 	
@@ -156,7 +163,6 @@ class Board
 				@b[i+1].visited = true
 				DFS_combo(i+1,set)
 			end
-			end
 		end
 		# check below 1&2
 		if i+6<30 and i+12<30 and i%6==(i+6)%6 and i%6==(i+12)%6 and @b[i].color==@b[i+6].color and @b[i].color==@b[i+12].color
@@ -204,12 +210,21 @@ class Board
 			end
 		end
 
-		
 		return set
 	end
 
-	private
+	def delete
+		return nil if @combos.empty?
+		combo = @combos.pop
+		combo.each do |s|
+			@b[s].chang
+		end
+	end
+
+	#private
 	def new_board
+		@b = []
+		@bb = []
 		c = 0
 		for i in 0..4
 			for j in 0..5
@@ -226,14 +241,14 @@ class Game < Gosu::Window
 	def initialize
 		super 480,720
 		self.caption = "ToS"
-		#@stone = Stone.new("f",0,0)
 		@board = Board.new
 		@debug = Gosu::Font.new(25)
+		@delay = 500
+		@prev_time = 0
 	end
 	def needs_cursor?; true; end
 
 	def update
-		#button_down?(Gosu::MS_LEFT) and @stone.drag(self.mouse_x,self.mouse_y)
 		button_down?(Gosu::KB_ESCAPE) and exit
 		
 		if button_down?(Gosu::MS_LEFT) and @board.move?
@@ -256,18 +271,32 @@ class Game < Gosu::Window
 			@board.move = false
 			coord = @board.dindex(@board.start)
 			@board.set_stone(@board.start,coord[0],coord[1])
+			
+			curr_time = Gosu.milliseconds
+			if @prev_time < curr_time
+				@prev_time = curr_time + @delay
+				@board.delete
+			end
 		end
 		
+		#test
 		button_down?(Gosu::KB_Q) and @board.check
+		if button_down?(Gosu::KB_W)
+			curr_time = Gosu.milliseconds
+			if @prev_time < curr_time
+				@prev_time = curr_time + @delay
+				@board.delete
+			end
+		end
 		
+		button_down?(Gosu::KB_R) and @board.new_board
 	end
 	
 	def draw
 		@debug.draw_text("#{mouse_x} , #{mouse_y}", 0, 0, 2, 1.0, 1.0, Gosu::Color::WHITE)
 		@debug.draw_text("#{@board.start}", 0, 25, 2, 1.0, 1.0, Gosu::Color::WHITE)
 		@debug.draw_text("move? #{@board.move?}, stone? #{@board.stone?(mouse_x,mouse_y,width,height)}", 0, 50, 2, 1.0, 1.0, Gosu::Color::WHITE)
-		@debug.draw_text(@board.check, 0, 75, 2, 1.0, 1.0, Gosu::Color::WHITE)
-		#@stone.draw
+		#@debug.draw_text(@board.check, 0, 75, 2, 1.0, 1.0, Gosu::Color::WHITE)
 		@board.draw
 	end
 end
