@@ -4,28 +4,30 @@ class Image
 		@w,@h = @img.width,@img.height
 		@x,@y,@z = x,y,z
   end
-	def draw
-		@img.draw(@x,@y,@z)
+	def draw(sx=1, sy=1, color=0xff_ffffff)
+		@img.draw(@x,@y,@z,sx,sy,color)
 	end
+		
+	def set(x,y)
+		@x,@y = x,y
+	end
+	
+	def w; @w; end
+	def h; @h; end
 end
 
 class Stone < Image
-	attr_reader :attr
 	def initialize(x,y)
 		@attrlist = ["_w","_f","_e","_l","_d","_h"]
 		@attr = @attrlist.sample
 		@en = ""
 		@type = ""
-		super "image/stone#{@attr}.png",x,y,1
+		super "image/stone#{@attr}.png",x,y,2
 	end
 	
 	def drag(x,y)
 		@x,@y = x-@w/2,y-@h/2
 	end
-	def set(x,y)
-		@x,@y = x,y
-	end
-	
 	# 轉換符石後更新圖片 (每次轉換呼叫一次即可)
 	def update_img; @img = Gosu::Image.new("image/stone#{@attr}#{@en}#{@type}.png"); end
 	# 刪除符石
