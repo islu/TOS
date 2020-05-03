@@ -78,6 +78,7 @@ class Game < Gosu::Window
 		
 		!button_down?(Gosu::MS_LEFT) and @board.reset
 		# test
+		#button_down?(Gosu::KB_Q) and @board.play_test
 		#@state.dropping? and @state.back and @board.new
 	end
 	
@@ -85,11 +86,13 @@ class Game < Gosu::Window
 		mx,my = mouse_x,mouse_y
 		sx,sy = width,height
 		@board.draw
+		@state.deleting? || @state.dropping? and @board.draw_combo
 		!@state.moveing? and @timebar.draw_lifebar
 		@state.moveing? and @timebar.draw_timebar
 		
+		
 		@debug.draw_text("#{mx} , #{my}", 0, 0, 2, 1.0, 1.0, Gosu::Color::WHITE)
-		@debug.draw_text("#{@state.dropping?}", 0, 25, 2, 1.0, 1.0, Gosu::Color::WHITE)
+		#@debug.draw_text("combo count: #{@board.count_combo}", 0, 25, 2, 1.0, 1.0, Gosu::Color::WHITE)
 
 	end
 end

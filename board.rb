@@ -1,5 +1,6 @@
 class Board
 	def initialize
+		
 		@stones = []
 		@boardback = []
 		@col,@row = 5,6
@@ -8,7 +9,10 @@ class Board
 		@combostack = []
 		@dropstack = []
 		@temptime = 0.0
-		@deletspeed = 500.0
+		@deletspeed = 450.0
+		@combocounter = 0
+		@combosound = ComboSound.new
+		@combotext = Gosu::Font.new(50)
 		
 		@currstone = nil
 		init
@@ -37,7 +41,13 @@ class Board
 			@stones[i].nostone
 			@stones[i].update_img
 		}
+		@combocounter += 1
+		@combosound.play(@combocounter)
 	end
+	def count_combo
+		@combocounter
+	end
+
 	
 	def all_delete?
 		@combostack.empty?
@@ -177,6 +187,9 @@ class Board
 		@stones.each {|stone| stone.draw}
 		@boardback.each {|img| img.draw}
 	end
+	def draw_combo
+		@combotext.draw_text("#{@combocounter} combo", 300, 650, 2, 1.0, 1.0, Gosu::Color::YELLOW)		
+	end
 	private
 	def init
 		c = 0
@@ -188,5 +201,23 @@ class Board
 			end
 			c += 1
 		end		
+	end
+end
+
+class ComboSound
+	def initialize
+		@sound = []
+		init
+	end
+	def play(i)
+		if i >= 9
+			@sound[-1].play
+		else
+			@sound[i-1].play
+		end
+	end
+	private
+	def init
+		10.times {|i| @sound<<Gosu::Sample.new("sound/combo/combo#{i+1}.wav") }
 	end
 end
