@@ -25,6 +25,20 @@ class Stone < Image
 		super "image/stone#{@attr}.png",x,y,2
 	end
 	
+	def attr; @attr; end
+	# def can_delete?
+		# @type != "_fr"
+	# end
+	def deleted?
+		@attr == "_n" 
+	end
+	
+	def new(attr=@attrlist.sample,en="",type="")
+		@attr = attr
+		@en = en
+		@type = type
+	end
+	
 	def drag(x,y)
 		@x,@y = x-@w/2,y-@h/2
 	end

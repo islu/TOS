@@ -1,3 +1,4 @@
+#coding: utf-8
 require 'gosu'
 require 'aasm'
 require_relative 'stone'
@@ -15,11 +16,17 @@ class BATTLE_STATE
 		end
 		event :delete do
 			transitions from: :moveing, to: :deleting
+		end		
+		event :drop do
+			transitions from: :deleting, to: :dropping
+		end
+		event :next do
+			#transitions from: :deleting, to: :dropping
 		end
 		
 		# test
 		event :back do
-			transitions from: [:moveing,:deleting,:dropping], to: :normal
+			transitions from: [:dropping], to: :normal
 		end
 		
 	end
@@ -45,26 +52,33 @@ class Game < Gosu::Window
 		
 		button_down?(Gosu::KB_ESCAPE) and exit
 		
+		# ?????
 		if button_down?(Gosu::MS_LEFT) and @state.may_move? and @board.stone?(mx,my,sx,sy)
 			@board.drag(mx,my)
 			@board.swap(mx,my) and @state.move
 		end
-		
+		# ?????
 		if button_down?(Gosu::MS_LEFT) and @state.moveing? and @board.stone?(mx,my,sx,sy)
 			@board.drag(mx,my)
 			@board.swap(mx,my)
-			@timebar.countdown(currtime) and @state.delete
+			# ????????combo
+			@timebar.countdown(currtime) and @state.delete and @board.check_combos
 		elsif !button_down?(Gosu::MS_LEFT) and @state.moveing?
 			@timebar.reset_timebar
+			# ???????combo
+			@board.check_combos
 			@state.delete
 		end
+		# ????
+		if @state.deleting?
+			@board.all_delete? and @state.drop
+			@board.delete_combos(currtime)
+		end
 		
-		# test
-		@state.deleting? and @state.back
 		
 		!button_down?(Gosu::MS_LEFT) and @board.reset
-
-		#button_down?(Gosu::KB_Q) and @board.new
+		# test
+		#@state.dropping? and @state.back and @board.new
 	end
 	
 	def draw
@@ -75,7 +89,8 @@ class Game < Gosu::Window
 		@state.moveing? and @timebar.draw_timebar
 		
 		@debug.draw_text("#{mx} , #{my}", 0, 0, 2, 1.0, 1.0, Gosu::Color::WHITE)
-		@debug.draw_text("deleting?: #{@state.deleting?}", 0, 50, 2, 1.0, 1.0, Gosu::Color::WHITE)
+		@debug.draw_text("#{@state.dropping?}", 0, 25, 2, 1.0, 1.0, Gosu::Color::WHITE)
+
 	end
 end
 
