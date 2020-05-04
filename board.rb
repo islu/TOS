@@ -6,25 +6,57 @@ class Board
 		@col,@row = 5,6
 		@stonesize = 80
 		@ybias = 320
+		@currstone = nil
+		
 		@combostack = []
-		@dropstack = []
 		@temptime = 0.0
 		@deletspeed = 450.0
 		@combocounter = 0
 		@combosound = ComboSound.new
 		@combotext = Gosu::Font.new(50)
 		
-		@currstone = nil
+		@dropstack = []
+		@dropybias = 80
+		
 		init
 	end
-	
+
 	def dropping
-		
+		done = true
+		@stones.each_index do |i|
+			x,y = coord(i)
+			if @stones[i].y != y*@stonesize+@ybias
+				@stones[i].drop
+				done = false
+			end
+		end
+		return done
 	end
 	
-	def drop
+	def search_dropping
+		len = @stones.length
+		(len-1).downto(0) do |i|
+			if @stones[i].deleted?
+				j = dfs_up(i-6)
+				x,y = coord(i)
+				if j.nil?
+					@stones[i].new
+					@stones[i].update_img
+					@stones[i].set(x*@stonesize,y*@stonesize+80)
+				else	
+					@stones[i],@stones[j] = @stones[j],@stones[i]
+				end
+			end
+		end
 	end
-	def all_drop?
+	
+	def dfs_up(i)
+		return nil if i < 0
+		if @stones[i].deleted?
+			dfs_up(i-6)
+		else 
+			return i
+		end
 	end
 	
 	def delete_combos(currtime)
@@ -34,6 +66,9 @@ class Board
 		end
 	end
 	
+	def reset_combo_counter
+		@combocounter = 0
+	end
 	def delete
 		c = @combostack.pop
 		return nil if c == nil 
@@ -43,9 +78,6 @@ class Board
 		}
 		@combocounter += 1
 		@combosound.play(@combocounter)
-	end
-	def count_combo
-		@combocounter
 	end
 
 	
@@ -107,6 +139,7 @@ class Board
 		end
 		
 		@combostack = tempcombostack
+		#@dropstack = tempcombostack.flatten
 		return @combostack
 	end
 	
@@ -188,7 +221,7 @@ class Board
 		@boardback.each {|img| img.draw}
 	end
 	def draw_combo
-		@combotext.draw_text("#{@combocounter} combo", 300, 650, 2, 1.0, 1.0, Gosu::Color::YELLOW)		
+		@combotext.draw_text("#{@combocounter} combo", 250, 650, 2, 1.0, 1.0, Gosu::Color::YELLOW)		
 	end
 	private
 	def init

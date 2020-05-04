@@ -11,7 +11,12 @@ class Image
 	def set(x,y)
 		@x,@y = x,y
 	end
+	def pos
+		return @x,@y
+	end
 	
+	def x; @x; end
+	def y; @y; end
 	def w; @w; end
 	def h; @h; end
 end
@@ -31,6 +36,10 @@ class Stone < Image
 	# end
 	def deleted?
 		@attr == "_n" 
+	end
+	
+	def drop
+		@y += 8
 	end
 	
 	def new(attr=@attrlist.sample,en="",type="")
