@@ -14,9 +14,15 @@ class Board
 		@combocounter = 0
 		@combosound = ComboSound.new
 		@combotext = Gosu::Font.new(50)
+		@combotext2 = Gosu::Font.new(30)
+		@comboMagn = 0.25
 		
 		@dropstack = []
-		@dropybias = 80
+		
+		@record = {
+			"_w"=>0,"_f"=>0,"_e"=>0,"_l"=>0,"_d"=>0,"_h"=>0,
+			"_w_en"=>0,"_f_en"=>0,"_e_en"=>0,"_l_en"=>0,"_d_en"=>0,"_h_en"=>0
+		}
 		
 		init
 	end
@@ -35,18 +41,31 @@ class Board
 	
 	def search_dropping
 		len = @stones.length
+		temp = []
 		(len-1).downto(0) do |i|
 			if @stones[i].deleted?
-				j = dfs_up(i-6)
-				x,y = coord(i)
+				j = dfs_up(i-6)	
 				if j.nil?
-					@stones[i].new
-					@stones[i].update_img
-					@stones[i].set(x*@stonesize,y*@stonesize+80)
+					temp<<i
 				else	
 					@stones[i],@stones[j] = @stones[j],@stones[i]
 				end
 			end
+		end
+		
+		temp.shuffle!
+		unless @dropstack.empty? || temp.empty?
+			attr = @dropstack.pop
+			i = temp.pop
+			x,y = coord(i)
+			@stones[i].new(attr,"_en")
+			@stones[i].set(x*@stonesize,y*@stonesize+80)	
+		end
+
+		temp.each do |i|
+			x,y = coord(i)
+			@stones[i].new
+			@stones[i].set(x*@stonesize,y*@stonesize+80)		
 		end
 	end
 	
@@ -68,16 +87,27 @@ class Board
 	
 	def reset_combo_counter
 		@combocounter = 0
+		@record = {
+			"_w"=>0,"_f"=>0,"_e"=>0,"_l"=>0,"_d"=>0,"_h"=>0,
+			"_w_en"=>0,"_f_en"=>0,"_e_en"=>0,"_l_en"=>0,"_d_en"=>0,"_h_en"=>0
+		}
 	end
 	def delete
 		c = @combostack.pop
-		return nil if c == nil 
+		return nil if c == nil
+		@dropstack<<@stones[c.last].attr if c.length >= 5
+		@combocounter += 1
+		@combosound.play(@combocounter)
+		
 		c.each {|i|
+			attr = @stones[i].attr
+			en = @stones[i].en
+			# 紀錄符石屬性數量及強化數量
+			@record["#{attr}#{en}"] += 1
 			@stones[i].nostone
 			@stones[i].update_img
 		}
-		@combocounter += 1
-		@combosound.play(@combocounter)
+
 	end
 
 	
@@ -139,7 +169,7 @@ class Board
 		end
 		
 		@combostack = tempcombostack
-		#@dropstack = tempcombostack.flatten
+
 		return @combostack
 	end
 	
@@ -221,7 +251,8 @@ class Board
 		@boardback.each {|img| img.draw}
 	end
 	def draw_combo
-		@combotext.draw_text("#{@combocounter} combo", 250, 650, 2, 1.0, 1.0, Gosu::Color::YELLOW)		
+		@combotext.draw_text("#{@combocounter} combo!!", 250, 650, 2, 1.0, 1.0, Gosu::Color::YELLOW)	
+		@combotext2.draw_text("#{@combocounter*@comboMagn*100.0}%", 350, 625, 2, 1.0, 1.0, Gosu::Color::YELLOW)	
 	end
 	private
 	def init

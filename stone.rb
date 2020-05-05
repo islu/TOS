@@ -31,26 +31,22 @@ class Stone < Image
 	end
 	
 	def attr; @attr; end
+	def en; @en; end
 	# def can_delete?
 		# @type != "_fr"
 	# end
-	def deleted?
-		@attr == "_n" 
-	end
+	def deleted?; @attr == "_n"; end
 	
-	def drop
-		@y += 8
-	end
+	def drop; @y += 8; end
 	
 	def new(attr=@attrlist.sample,en="",type="")
 		@attr = attr
 		@en = en
 		@type = type
+		update_img
 	end
 	
-	def drag(x,y)
-		@x,@y = x-@w/2,y-@h/2
-	end
+	def drag(x,y); @x,@y = x-@w/2,y-@h/2; end
 	# 轉換符石後更新圖片 (每次轉換呼叫一次即可)
 	def update_img; @img = Gosu::Image.new("image/stone#{@attr}#{@en}#{@type}.png"); end
 	# 刪除符石

@@ -9,7 +9,7 @@ class BATTLE_STATE
   include AASM
   aasm do
     state :normal, initial: true
-    state :moveing,:deleting,:dropping
+    state :moveing,:deleting,:dropping,:attacking
 			
 		event :move do
 			transitions from: :normal, to: :moveing
@@ -23,13 +23,13 @@ class BATTLE_STATE
 		event :again do
 			transitions from: :dropping, to: :deleting
 		end
-		event :next do
-			transitions from: :dropping, to: :normal
+		event :attack do
+			transitions from: :dropping, to: :attacking
 		end
 		
 		# test
 		event :back do
-			transitions from: [:dropping], to: :normal
+			transitions from: [:moveing,:deleting,:dropping,:attacking], to: :normal
 		end
 		
 	end
@@ -62,11 +62,13 @@ class Game < Gosu::Window
 			@board.swap(mx,my) and @state.move
 		end
 		# 轉珠中
+		if button_down?(Gosu::MS_LEFT) and @state.moveing?
+			# 時間結束計算combo		
+			@timebar.countdown(currtime) and @state.delete and @board.check_combos
+		end
 		if button_down?(Gosu::MS_LEFT) and @state.moveing? and @board.stone?(mx,my,sx,sy)
 			@board.drag(mx,my)
 			@board.swap(mx,my)
-			# 時間結束計算combo
-			@timebar.countdown(currtime) and @state.delete and @board.check_combos
 		elsif !button_down?(Gosu::MS_LEFT) and @state.moveing?
 			@timebar.reset_timebar
 			# 放開後珠子計算combo
@@ -83,15 +85,19 @@ class Game < Gosu::Window
 			if @board.dropping
 				@board.check_combos
 				if @board.all_delete?
-					@state.next 
+					@state.attack 
 				else
 					@state.again
 				end
 			end
 		end
+		# 計算傷害
+		if @state.attacking?
+			@state.back
+		end
 		
 		
-		!button_down?(Gosu::MS_LEFT) and @board.reset
+		!button_down?(Gosu::MS_LEFT) || @state.deleting? and @board.reset
 		# test
 		button_down?(Gosu::KB_Q) and @state.dropping? and @state.back and @board.new
 		#@state.dropping? and @state.back and @board.new
