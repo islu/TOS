@@ -4,6 +4,7 @@ require 'aasm'
 require_relative 'stone'
 require_relative 'board'
 require_relative 'timebar'
+require_relative 'team'
 
 class BATTLE_STATE
   include AASM
@@ -38,11 +39,13 @@ end
 class Game < Gosu::Window
 	
 	def initialize
-		super 480,720
+		#super 480,720
+		super 1200,720
 		self.caption = "ToS"
 		@board = Board.new
 		@timebar = Timebar.new
 		@state = BATTLE_STATE.new
+		@team = Team.new([1239,1239,1239,1239,1239,1239])
 		@debug = Gosu::Font.new(25)
 		
 	end
@@ -56,7 +59,7 @@ class Game < Gosu::Window
 		button_down?(Gosu::KB_ESCAPE) and exit
 		
 		# 轉珠前
-		if button_down?(Gosu::MS_LEFT) and @state.may_move? and @board.stone?(mx,my,sx,sy)
+		if button_down?(Gosu::MS_LEFT) and @state.may_move? and @board.stone?(mx,my)
 			@board.reset_combo_counter
 			@board.drag(mx,my)
 			@board.swap(mx,my) and @state.move
@@ -66,7 +69,7 @@ class Game < Gosu::Window
 			# 時間結束計算combo		
 			@timebar.countdown(currtime) and @state.delete and @board.check_combos
 		end
-		if button_down?(Gosu::MS_LEFT) and @state.moveing? and @board.stone?(mx,my,sx,sy)
+		if button_down?(Gosu::MS_LEFT) and @state.moveing? and @board.stone?(mx,my)
 			@board.drag(mx,my)
 			@board.swap(mx,my)
 		elsif !button_down?(Gosu::MS_LEFT) and @state.moveing?
@@ -84,8 +87,10 @@ class Game < Gosu::Window
 		if @state.dropping?
 			if @board.dropping
 				@board.check_combos
+				@board.all_delete? and @board.breaking('_h')
+				
 				if @board.all_delete?
-					@state.attack 
+					@state.attack
 				else
 					@state.again
 				end
@@ -99,7 +104,7 @@ class Game < Gosu::Window
 		
 		!button_down?(Gosu::MS_LEFT) || @state.deleting? and @board.reset
 		# test
-		button_down?(Gosu::KB_Q) and @state.dropping? and @state.back and @board.new
+		button_down?(Gosu::KB_Q) and @board.new
 		#@state.dropping? and @state.back and @board.new
 	end
 	
@@ -107,13 +112,17 @@ class Game < Gosu::Window
 		mx,my = mouse_x,mouse_y
 		sx,sy = width,height
 		@board.draw
+		@team.draw
+		@team.monster?(mx,my) and @team.draw_skills(@team.index(mx,my))
+		
 		@state.deleting? || @state.dropping? and @board.draw_combo
 		!@state.moveing? and @timebar.draw_lifebar
 		@state.moveing? and @timebar.draw_timebar
-		
+
 		
 		@debug.draw_text("#{mx} , #{my}", 0, 0, 2, 1.0, 1.0, Gosu::Color::WHITE)
-		@debug.draw_text("dropping? #{@state.dropping?}", 0, 25, 2, 1.0, 1.0, Gosu::Color::WHITE)
+		@debug.draw_text("stone? #{@board.stone?(mx,my)}", 0, 25, 2, 1.0, 1.0, Gosu::Color::WHITE)
+		@debug.draw_text("index? #{@team.index(mx,my)}", 0, 50, 2, 1.0, 1.0, Gosu::Color::WHITE)
 
 	end
 end

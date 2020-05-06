@@ -18,6 +18,7 @@ class Board
 		@comboMagn = 0.25
 		
 		@dropstack = []
+		@trun = 0
 		
 		@record = {
 			"_w"=>0,"_f"=>0,"_e"=>0,"_l"=>0,"_d"=>0,"_h"=>0,
@@ -26,7 +27,16 @@ class Board
 		
 		init
 	end
-
+	# 裂心 切西亞隊伍技能
+	def breaking(attr)
+		combo = []
+		@stones.each_index {|i|
+			combo<<i if @stones[i].attr == attr
+		}
+		@combostack<<combo if !combo.empty?
+		@combocounter -= 1
+	end
+	
 	def dropping
 		done = true
 		@stones.each_index do |i|
@@ -198,8 +208,8 @@ class Board
 		@stones[i1].attr == @stones[i2].attr
 	end
 	
-	def stone?(mx,my,sx,sy)
-		!(my<@ybias || my>sy || mx<0 || mx>sx)
+	def stone?(mx,my)
+		!(my<@ybias || my>@ybias+@stonesize*@col || mx<0 || mx>@stonesize*@row)
 	end
 	# 交換符石
 	def swap(mx,my)
@@ -252,7 +262,7 @@ class Board
 	end
 	def draw_combo
 		@combotext.draw_text("#{@combocounter} combo!!", 250, 650, 2, 1.0, 1.0, Gosu::Color::YELLOW)	
-		@combotext2.draw_text("#{@combocounter*@comboMagn*100.0}%", 350, 625, 2, 1.0, 1.0, Gosu::Color::YELLOW)	
+		@combotext2.draw_text("+#{@combocounter*@comboMagn*100.0}%", 330, 625, 2, 1.0, 1.0, Gosu::Color::YELLOW)	
 	end
 	private
 	def init
