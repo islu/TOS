@@ -1,10 +1,16 @@
 module DATA
-MONSTER = {
-	1239 => {attr: '_f', race: '_g', star: 6, lv: 99, hp: 3209, atk: 1651, re: 314, AS: {name: '三原靈陣 ‧ 血燄', charge: 'CD', num: 8, description: '所有符石隨機轉化為水、火、木及心符石，同時火符石出現率上升，並將火符石以火強化符石代替'}, },
-}
+	MONSTER = {
+		1239 => {attr: '_f', race: '_g', star: 6, lv: 99, hp: 3209, atk: 1651, re: 314, AS: {name: '三原靈陣 ‧ 血燄', charge: 'CD', num: 8, description: '所有符石隨機轉化為水、火、木及心符石，同時火符石出現率上升，並將火符石以火強化符石代替'}, },
+	}
+end
+module AS
+	def break_stone(stones)
+		stones.each
+	end
 end
 
 class Monster < Image
+	include AS
 	def initialize(id,order)
 		@id = id
 		@order = order

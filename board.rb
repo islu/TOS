@@ -27,6 +27,7 @@ class Board
 		
 		init
 	end
+	def stones; @stones; end
 	# 裂心 切西亞隊伍技能
 	def breaking(attr)
 		combo = []

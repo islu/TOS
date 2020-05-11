@@ -101,7 +101,6 @@ class Game < Gosu::Window
 			@state.back
 		end
 		
-		
 		!button_down?(Gosu::MS_LEFT) || @state.deleting? and @board.reset
 		# test
 		button_down?(Gosu::KB_Q) and @board.new
