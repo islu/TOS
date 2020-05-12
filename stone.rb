@@ -47,11 +47,10 @@ class Stone < Image
 	end
 	
 	def drag(x,y); @x,@y = x-@w/2,y-@h/2; end
-	# 轉換符石後更新圖片 (每次轉換呼叫一次即可)
 	def update_img; @img = Gosu::Image.new("image/stone#{@attr}#{@en}#{@type}.png"); end
-	# 刪除符石
+	
 	def nostone; @attr = "_n"; @en = ""; @type = "" end
-	# 轉換屬性符石
+	
 	def transform_to_w; @attr = "_w"; end
 	def transform_to_f; @attr = "_f"; end
 	def transform_to_e; @attr = "_e"; end
@@ -59,10 +58,10 @@ class Stone < Image
 	def transform_to_d; @attr = "_d"; end
 	def transform_to_h; @attr = "_h"; end
 	def transform_to_random; @attr = @attrlist.sample; end
-	# 轉換強化符石
-	def strong;   @en = "_en"; end
-	def unstrong; @en = ""; end
-	# 轉換種族符石
+	
+	def enchante;   @en = "_en"; end
+	def non_enchante; @en = ""; end
+	
 	def race_human;    @type = "_h"; end
 	def race_god;      @type = "_g"; end
 	def race_demon;    @type = "_de"; end

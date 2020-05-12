@@ -10,7 +10,7 @@ class BATTLE_STATE
   include AASM
   aasm do
     state :normal, initial: true
-    state :moveing,:deleting,:dropping,:attacking
+    state :moveing,:deleting,:dropping,:checking,:attacking
 			
 		event :move do
 			transitions from: :normal, to: :moveing
@@ -19,13 +19,16 @@ class BATTLE_STATE
 			transitions from: :moveing, to: :deleting
 		end		
 		event :drop do
-			transitions from: :deleting, to: :dropping
+			transitions from: [:deleting,:checking], to: :dropping
 		end
 		event :again do
 			transitions from: :dropping, to: :deleting
 		end
+		event :check do
+			transitions  from: :dropping, to: :checking
+		end
 		event :attack do
-			transitions from: :dropping, to: :attacking
+			transitions from: :checking, to: :attacking
 		end
 		
 		# test
@@ -87,24 +90,40 @@ class Game < Gosu::Window
 		if @state.dropping?
 			if @board.dropping
 				@board.check_combos
-				@board.all_delete? and @board.breaking('_h')
 				
 				if @board.all_delete?
-					@state.attack
+					@state.check
 				else
 					@state.again
 				end
 			end
 		end
+		if @state.checking?
+			if @board.explode_h
+				@state.drop and @board.search_dropping
+			else
+				@state.attack
+			end
+		end
+		
 		# 計算傷害
 		if @state.attacking?
 			@state.back
 		end
 		
 		!button_down?(Gosu::MS_LEFT) || @state.deleting? and @board.reset
+		
+		button_down?(Gosu::KB_1)
+		button_down?(Gosu::KB_2)
+		button_down?(Gosu::KB_3)
+		button_down?(Gosu::KB_4) 
+		button_down?(Gosu::KB_5) 
+		button_down?(Gosu::KB_6) 
+		
+		
 		# test
 		button_down?(Gosu::KB_Q) and @board.new
-		#@state.dropping? and @state.back and @board.new
+		
 	end
 	
 	def draw
@@ -114,7 +133,7 @@ class Game < Gosu::Window
 		@team.draw
 		@team.monster?(mx,my) and @team.draw_skills(@team.index(mx,my))
 		
-		@state.deleting? || @state.dropping? and @board.draw_combo
+		@state.deleting? || @state.dropping? || @state.checking? || @state.attacking? and @board.draw_combo
 		!@state.moveing? and @timebar.draw_lifebar
 		@state.moveing? and @timebar.draw_timebar
 

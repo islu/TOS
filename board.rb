@@ -27,16 +27,24 @@ class Board
 		
 		init
 	end
-	def stones; @stones; end
-	# 裂心 切西亞隊伍技能
-	def breaking(attr)
-		combo = []
-		@stones.each_index {|i|
-			combo<<i if @stones[i].attr == attr
-		}
-		@combostack<<combo if !combo.empty?
-		@combocounter -= 1
+	def drop(attr)
+		
 	end
+	
+	def explode(attr)
+		c = []
+		@stones.each_index {|i|
+			c<<i if @stones[i].attr == attr
+		}
+		return false if c.empty?
+		c.each {|i|
+			@stones[i].nostone
+			@stones[i].update_img
+		}
+		return true
+	end
+	def explode_h; explode("_h"); end;
+	
 	
 	def dropping
 		done = true
