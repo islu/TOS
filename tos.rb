@@ -10,11 +10,15 @@ class BATTLE_STATE
   include AASM
   aasm do
     state :normal, initial: true
-    state :moveing,:deleting,:dropping,:checking,:attacking
+    state :moveing,:deleting,:dropping,:checking,:attacking,:first_checking
 			
 		event :move do
 			transitions from: :normal, to: :moveing
 		end
+		event :active do
+			transitions from: :normal, to: :first_checking
+		end
+		
 		event :delete do
 			transitions from: :moveing, to: :deleting
 		end		
@@ -33,7 +37,7 @@ class BATTLE_STATE
 		
 		# test
 		event :back do
-			transitions from: [:moveing,:deleting,:dropping,:attacking], to: :normal
+			transitions from: [:first_checking,:moveing,:deleting,:dropping,:attacking], to: :normal
 		end
 		
 	end
@@ -42,13 +46,14 @@ end
 class Game < Gosu::Window
 	
 	def initialize
-		#super 480,720
-		super 1200,720
+		super 480,720
+		#super 1200,720
 		self.caption = "ToS"
 		@board = Board.new
-		@timebar = Timebar.new
-		@state = BATTLE_STATE.new
 		@team = Team.new([1239,1239,1239,1239,1239,1239])
+		@timebar = Timebar.new(@team.maxLife)
+		@state = BATTLE_STATE.new
+		
 		@debug = Gosu::Font.new(25)
 		
 	end
@@ -61,11 +66,18 @@ class Game < Gosu::Window
 		
 		button_down?(Gosu::KB_ESCAPE) and exit
 		
+		
 		# 轉珠前
-		if button_down?(Gosu::MS_LEFT) and @state.may_move? and @board.stone?(mx,my)
-			@board.reset_combo_counter
-			@board.drag(mx,my)
-			@board.swap(mx,my) and @state.move
+		if button_down?(Gosu::MS_LEFT) and @state.may_move?
+			if @board.stone?(mx,my)
+				@board.reset_combo_counter
+				@board.drag(mx,my)
+				@board.swap(mx,my) and @state.move
+			end
+			if @team.monster?(mx,my)
+				index = @team.index(mx,my)
+				active_monster_skill(index)
+			end
 		end
 		# 轉珠中
 		if button_down?(Gosu::MS_LEFT) and @state.moveing?
@@ -111,16 +123,13 @@ class Game < Gosu::Window
 			@state.back
 		end
 		
-		!button_down?(Gosu::MS_LEFT) || @state.deleting? and @board.reset
+		if @state.first_checking?
+			@state.back
+		end
 		
-		button_down?(Gosu::KB_1)
-		button_down?(Gosu::KB_2)
-		button_down?(Gosu::KB_3)
-		button_down?(Gosu::KB_4) 
-		button_down?(Gosu::KB_5) 
-		button_down?(Gosu::KB_6) 
+		!button_down?(Gosu::MS_LEFT) || @state.deleting? and @board.reset	
 		
-		
+		@timebar.update_life(@team.currLife)
 		# test
 		button_down?(Gosu::KB_Q) and @board.new
 		
@@ -130,19 +139,31 @@ class Game < Gosu::Window
 		mx,my = mouse_x,mouse_y
 		sx,sy = width,height
 		@board.draw
-		@team.draw
-		@team.monster?(mx,my) and @team.draw_skills(@team.index(mx,my))
 		
-		@state.deleting? || @state.dropping? || @state.checking? || @state.attacking? and @board.draw_combo
+		@team.draw_icons
+		@state.normal? and @team.monster?(mx,my) and @team.draw_skills(@team.index(mx,my))
+		
+		!@state.normal? and !@state.moveing? and @board.draw_combo
 		!@state.moveing? and @timebar.draw_lifebar
 		@state.moveing? and @timebar.draw_timebar
 
 		
 		@debug.draw_text("#{mx} , #{my}", 0, 0, 2, 1.0, 1.0, Gosu::Color::WHITE)
-		@debug.draw_text("stone? #{@board.stone?(mx,my)}", 0, 25, 2, 1.0, 1.0, Gosu::Color::WHITE)
-		@debug.draw_text("index? #{@team.index(mx,my)}", 0, 50, 2, 1.0, 1.0, Gosu::Color::WHITE)
+		
+		#@debug.draw_text("index? #{@team.index(mx,my)}", 0, 50, 2, 1.0, 1.0, Gosu::Color::WHITE)
 
 	end
+	
+	def active_monster_skill(monsterOrder)
+		monsterId = @team.id(monsterOrder)
+		case monsterId
+			when 1239
+				@board.all_transform
+				@board.enchante("_f")
+		end
+		@state.active
+	end
+	
 end
 
 Game.new.show

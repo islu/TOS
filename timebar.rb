@@ -1,7 +1,8 @@
 class Timebar
-	def initialize(t=5000.0)
+	def initialize(maxLife,t=5000.0)
 		@ybias = 320
 		@inonscale = 0.6
+		@font = Gosu::Font.new(25)
 		@clock = Image.new("image/Timebar/clock.png",0,0,1)
 		@heart = Image.new("image/Timebar/heart.png",0,0,1)
 		@timeclip = Image.new("image/Timebar/timeclip.png",0,0,1)
@@ -11,12 +12,22 @@ class Timebar
 		@temptime = 0.0
 		@clipsale = 0.8
 		
+		@currLife,@maxLife = maxLife,maxLife 
+		
 		init
+	end
+	
+	def update_life(currLife)
+		@currLife = currLife
 	end
 
 	def draw_lifebar
+		diff = (@maxLife-@currLife)/@maxLife.to_f
+		@lifeclip.set(@heart.w*@inonscale/2-diff*@lifeclip.w,@ybias-@lifeclip.h)
+		
 		@lifeclip.draw(1,@clipsale)
 		@heart.draw(@inonscale,@inonscale)
+		@font.draw_text("#{@currLife}/#{@maxLife}",180,290,2,1.0,1.0,Gosu::Color::YELLOW)
 	end
 
 	def draw_timebar

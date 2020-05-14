@@ -24,11 +24,18 @@ class Board
 			"_w"=>0,"_f"=>0,"_e"=>0,"_l"=>0,"_d"=>0,"_h"=>0,
 			"_w_en"=>0,"_f_en"=>0,"_e_en"=>0,"_l_en"=>0,"_d_en"=>0,"_h_en"=>0
 		}
+		@pre_record = {
+			"_w"=>0,"_f"=>0,"_e"=>0,"_l"=>0,"_d"=>0,"_h"=>0,
+			"_w_en"=>0,"_f_en"=>0,"_e_en"=>0,"_l_en"=>0,"_d_en"=>0,"_h_en"=>0
+		}
 		
 		init
 	end
-	def drop(attr)
-		
+
+	def drop_d_en
+		num = @pre_record["_d"]+@pre_record["_d_en"]
+		num = num/3*2
+		num.times { @dropstack<<["_d","_en",""] }
 	end
 	
 	def explode(attr)
@@ -44,7 +51,32 @@ class Board
 		return true
 	end
 	def explode_h; explode("_h"); end;
-	
+	def enchante(attr)
+		c = []
+		@stones.each_index {|i|
+			c<<i if @stones[i].attr == attr
+		}
+		return false if c.empty?
+		c.each {|i|
+			@stones[i].enchante
+			@stones[i].update_img
+		}
+		return true
+	end
+	def all_transform
+		prob = ["_w","_f","_e","_f","_h"]
+		@stones.each do |stone|
+			toThis = prob.sample
+			case toThis
+				when "_w"; stone.transform_to_w
+				when "_f"; stone.transform_to_f
+				when "_e"; stone.transform_to_e
+				when "_h"; stone.transform_to_h
+			end
+			stone.update_img
+		end
+		return true
+	end
 	
 	def dropping
 		done = true
@@ -77,7 +109,7 @@ class Board
 			attr = @dropstack.pop
 			i = temp.pop
 			x,y = coord(i)
-			@stones[i].new(attr,"_en")
+			@stones[i].new(attr[0],attr[1],attr[2])
 			@stones[i].set(x*@stonesize,y*@stonesize+80)	
 		end
 
@@ -114,7 +146,8 @@ class Board
 	def delete
 		c = @combostack.pop
 		return nil if c == nil
-		@dropstack<<@stones[c.last].attr if c.length >= 5
+		#@dropstack<<@stones[c.last].attr if c.length >= 5
+		@dropstack<< [@stones[c.last].attr,"_en",""] if c.length >= 5
 		@combocounter += 1
 		@combosound.play(@combocounter)
 		

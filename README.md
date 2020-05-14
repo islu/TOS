@@ -2,7 +2,7 @@
 [中文版-開發筆記](https://hackmd.io/@islu/S1EDMLBKI)
 
 ## Start!
-* ruby 2.6+
+* `ruby 2.6+`
 * `$ gem install gosu`
 * `$ gem install aasm`
 * `$ ruby tos.rb`

@@ -36,6 +36,13 @@ class Stone < Image
 		# @type != "_fr"
 	# end
 	def deleted?; @attr == "_n"; end
+	def water?; @attr == "_w"; end
+	def fire?;  @attr == "_f"; end
+	def eath?;  @attr == "_e"; end
+	def light?; @attr == "_l"; end
+	def dark?;  @attr == "_d"; end
+	def heart?; @attr == "_h"; end
+	def enchante?; !@en == "_en"; end
 	
 	def drop; @y += 8; end
 	
@@ -58,6 +65,7 @@ class Stone < Image
 	def transform_to_d; @attr = "_d"; end
 	def transform_to_h; @attr = "_h"; end
 	def transform_to_random; @attr = @attrlist.sample; end
+	#def transform_to_random_for(attrList); @attr = attrList.sample; end
 	
 	def enchante;   @en = "_en"; end
 	def non_enchante; @en = ""; end
