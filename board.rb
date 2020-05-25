@@ -1,5 +1,5 @@
 class Board
-	def initialize
+	def initialize(comboMagn=0.25)
 		
 		@stones = []
 		@boardback = []
@@ -15,21 +15,43 @@ class Board
 		@combosound = ComboSound.new
 		@combotext = Gosu::Font.new(50)
 		@combotext2 = Gosu::Font.new(30)
-		@comboMagn = 0.25
+		@comboMagn = comboMagn
 		
 		@dropstack = []
 		@trun = 0
 		
 		@record = {
 			"_w"=>0,"_f"=>0,"_e"=>0,"_l"=>0,"_d"=>0,"_h"=>0,
-			"_w_en"=>0,"_f_en"=>0,"_e_en"=>0,"_l_en"=>0,"_d_en"=>0,"_h_en"=>0
+			"_w_en"=>0,"_f_en"=>0,"_e_en"=>0,"_l_en"=>0,"_d_en"=>0,"_h_en"=>0,
+			"_w_set"=>0,"_f_set"=>0,"_e_set"=>0,"_l_set"=>0,"_d_set"=>0,"_h_set"=>0
 		}
 		@pre_record = {
 			"_w"=>0,"_f"=>0,"_e"=>0,"_l"=>0,"_d"=>0,"_h"=>0,
-			"_w_en"=>0,"_f_en"=>0,"_e_en"=>0,"_l_en"=>0,"_d_en"=>0,"_h_en"=>0
+			"_w_en"=>0,"_f_en"=>0,"_e_en"=>0,"_l_en"=>0,"_d_en"=>0,"_h_en"=>0,
+			"_w_set"=>0,"_f_set"=>0,"_e_set"=>0,"_l_set"=>0,"_d_set"=>0,"_h_set"=>0
 		}
 		
 		init
+	end
+	def record; @record; end
+	
+	def dissolving_3_types?; dissolving_types == 3; end
+	def dissolving_types
+		count = 0
+		count +=1 if @record["_w"]!=0 || @record["_w_en"]!=0
+		count +=1 if @record["_f"]!=0 || @record["_f_en"]!=0
+		count +=1 if @record["_e"]!=0 || @record["_e_en"]!=0
+		count +=1 if @record["_l"]!=0 || @record["_l_en"]!=0
+		count +=1 if @record["_d"]!=0 || @record["_d_en"]!=0
+		count +=1 if @record["_h"]!=0 || @record["_h_en"]!=0
+		#puts "消除#{count}種符石"
+		return count
+	end
+	
+	def calculate_atk(attr)
+		comboMagn = 1 + (@combocounter-1)*@comboMagn
+		stoneMagn = @record[attr]*0.25 + @record[attr+"_en"]*0.4 + @record[attr+"_set"]*0.25
+		return comboMagn*stoneMagn
 	end
 
 	def drop_d_en
@@ -140,7 +162,8 @@ class Board
 		@combocounter = 0
 		@record = {
 			"_w"=>0,"_f"=>0,"_e"=>0,"_l"=>0,"_d"=>0,"_h"=>0,
-			"_w_en"=>0,"_f_en"=>0,"_e_en"=>0,"_l_en"=>0,"_d_en"=>0,"_h_en"=>0
+			"_w_en"=>0,"_f_en"=>0,"_e_en"=>0,"_l_en"=>0,"_d_en"=>0,"_h_en"=>0,
+			"_w_set"=>0,"_f_set"=>0,"_e_set"=>0,"_l_set"=>0,"_d_set"=>0,"_h_set"=>0
 		}
 	end
 	def delete
@@ -150,6 +173,8 @@ class Board
 		@dropstack<< [@stones[c.last].attr,"_en",""] if c.length >= 5
 		@combocounter += 1
 		@combosound.play(@combocounter)
+		
+		@record["#{@stones[c.last].attr}_set"] += 1
 		
 		c.each {|i|
 			attr = @stones[i].attr
@@ -334,6 +359,6 @@ class ComboSound
 	end
 	private
 	def init
-		10.times {|i| @sound<<Gosu::Sample.new("sound/combo/combo#{i+1}.wav") }
+		10.times {|i| @sound<<Gosu::Sample.new("sound/combo/combo#{i+1}.wav")}
 	end
 end

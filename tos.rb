@@ -11,7 +11,11 @@ class BATTLE_STATE
   aasm do
     state :normal, initial: true
     state :moveing,:deleting,:dropping,:checking,:attacking,:first_checking
-			
+		state :first_deleting, :first_dropping
+		
+		event :first_delete do; transitions from: :moveing, to: :first_deleting; end
+		event :first_drop do; transitions from: :first_deleting, to: :first_dropping; end
+		
 		event :move do
 			transitions from: :normal, to: :moveing
 		end
@@ -66,7 +70,6 @@ class Game < Gosu::Window
 		
 		button_down?(Gosu::KB_ESCAPE) and exit
 		
-		
 		# 轉珠前
 		if button_down?(Gosu::MS_LEFT) and @state.may_move?
 			if @board.stone?(mx,my)
@@ -75,8 +78,8 @@ class Game < Gosu::Window
 				@board.swap(mx,my) and @state.move
 			end
 			if @team.monster?(mx,my)
-				index = @team.index(mx,my)
-				active_monster_skill(index)
+				i = @team.index(mx,my)
+				@team.can_active?(i) and active_monster_skill(i) & @team.active(i)
 			end
 		end
 		# 轉珠中
@@ -120,6 +123,8 @@ class Game < Gosu::Window
 		
 		# 計算傷害
 		if @state.attacking?
+			@team.charge
+			calculate_atk
 			@state.back
 		end
 		
@@ -132,6 +137,7 @@ class Game < Gosu::Window
 		@timebar.update_life(@team.currLife)
 		# test
 		button_down?(Gosu::KB_Q) and @board.new
+		button_down?(Gosu::KB_R) and @state.back
 		
 	end
 	
@@ -140,8 +146,9 @@ class Game < Gosu::Window
 		sx,sy = width,height
 		@board.draw
 		
-		@team.draw_icons
-		@state.normal? and @team.monster?(mx,my) and @team.draw_skills(@team.index(mx,my))
+		@team.draw_icon
+		@state.normal? and @team.monster?(mx,my) and @team.draw_skill(@team.index(mx,my))
+		!@state.normal? and !@state.moveing? and @team.draw_atk
 		
 		!@state.normal? and !@state.moveing? and @board.draw_combo
 		!@state.moveing? and @timebar.draw_lifebar
@@ -154,6 +161,7 @@ class Game < Gosu::Window
 
 	end
 	
+	private
 	def active_monster_skill(monsterOrder)
 		monsterId = @team.id(monsterOrder)
 		case monsterId
@@ -163,7 +171,34 @@ class Game < Gosu::Window
 		end
 		@state.active
 	end
-	
+	def map_leader_skill(leader,target)
+		magn = 1.0
+		case leader.id
+			when 1239
+				if target.attr == "_f"
+					magn = 3.2
+					if @board.dissolving_types >= 4
+						magn *= 1.8
+					elsif @board.dissolving_3_types?
+						magn *= 1.5
+					end
+				end
+		end
+		return magn
+	end
+	def calculate_atk
+		leader1 = @team.first_leader
+		leader2 = @team.second_leader
+		@team.monsters.each do |m|
+			atk = m.atk
+			atk *= map_leader_skill(leader1, m)
+			atk *= map_leader_skill(leader2, m)
+			atk *= @board.calculate_atk(m.attr)
+			m.update_atk(atk.round)
+			puts atk
+			puts atk.round
+		end
+	end
 end
 
 Game.new.show
