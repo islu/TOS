@@ -35,6 +35,9 @@ class Board
 	end
 	def record; @record; end
 	
+	def x_possess_y(x,y,prob=1.0)
+		puts "#{x}屬性兼具#{y}屬性#{prob*100}%"
+	end
 	def dissolving_3_types?; dissolving_types == 3; end
 	def dissolving_types
 		count = 0
@@ -46,6 +49,10 @@ class Board
 		count +=1 if @record["_h"]!=0 || @record["_h_en"]!=0
 		#puts "消除#{count}種符石"
 		return count
+	end
+	
+	def calculate_re
+		calculate_atk("_h")
 	end
 	
 	def calculate_atk(attr)
@@ -88,8 +95,8 @@ class Board
 	def all_transform
 		prob = ["_w","_f","_e","_f","_h"]
 		@stones.each do |stone|
-			toThis = prob.sample
-			case toThis
+			attr = prob.sample
+			case attr
 				when "_w"; stone.transform_to_w
 				when "_f"; stone.transform_to_f
 				when "_e"; stone.transform_to_e

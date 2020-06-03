@@ -5,6 +5,7 @@ require_relative 'stone'
 require_relative 'board'
 require_relative 'timebar'
 require_relative 'team'
+require_relative 'floor'
 
 class BATTLE_STATE
   include AASM
@@ -12,9 +13,11 @@ class BATTLE_STATE
     state :normal, initial: true
     state :moveing,:deleting,:dropping,:checking,:attacking,:first_checking
 		state :first_deleting, :first_dropping
+		state :enemy_attacking
 		
 		event :first_delete do; transitions from: :moveing, to: :first_deleting; end
 		event :first_drop do; transitions from: :first_deleting, to: :first_dropping; end
+		event :enemy_attack do; transitions from: :attacking, to: :enemy_attacking; end
 		
 		event :move do
 			transitions from: :normal, to: :moveing
@@ -41,7 +44,7 @@ class BATTLE_STATE
 		
 		# test
 		event :back do
-			transitions from: [:first_checking,:moveing,:deleting,:dropping,:attacking], to: :normal
+			transitions from: [:enemy_attacking,:first_checking,:moveing,:deleting,:dropping,:attacking], to: :normal
 		end
 		
 	end
@@ -54,9 +57,10 @@ class Game < Gosu::Window
 		#super 1200,720
 		self.caption = "ToS"
 		@board = Board.new
-		@team = Team.new([1239,1239,1239,1239,1239,1239])
+		@team = Team.new([1239,1224,1239,1239,1239,1239])
 		@timebar = Timebar.new(@team.maxLife)
 		@state = BATTLE_STATE.new
+		@floor = Floor.new(2)
 		
 		@debug = Gosu::Font.new(25)
 		
@@ -114,27 +118,36 @@ class Game < Gosu::Window
 			end
 		end
 		if @state.checking?
-			if @board.explode_h
-				@state.drop and @board.search_dropping
-			else
+			#if @board.explode_h
+			#	@state.drop and @board.search_dropping
+			#else
 				@state.attack
-			end
+			#end
 		end
 		
 		# 計算傷害
 		if @state.attacking?
 			@team.charge
-			calculate_atk
-			@state.back
+			@team.recovery
+			@state.enemy_attack
 		end
 		
 		if @state.first_checking?
 			@state.back
 		end
 		
+		if @state.enemy_attacking?
+			@floor.cd_countdown
+			@team.take_damage(@floor.damage)
+			
+			@state.back
+		end
+		
 		!button_down?(Gosu::MS_LEFT) || @state.deleting? and @board.reset	
 		
+		!@state.moveing? and !@state.normal? and !@state.dropping? and calculate_atk & calculate_re
 		@timebar.update_life(@team.currLife)
+		@floor.update
 		# test
 		button_down?(Gosu::KB_Q) and @board.new
 		button_down?(Gosu::KB_R) and @state.back
@@ -146,18 +159,21 @@ class Game < Gosu::Window
 		sx,sy = width,height
 		@board.draw
 		
+		@floor.draw_enemys
+		
 		@team.draw_icon
 		@state.normal? and @team.monster?(mx,my) and @team.draw_skill(@team.index(mx,my))
 		!@state.normal? and !@state.moveing? and @team.draw_atk
+		!@state.normal? and !@state.moveing? and @timebar.draw_re(@team.total_re)
 		
 		!@state.normal? and !@state.moveing? and @board.draw_combo
 		!@state.moveing? and @timebar.draw_lifebar
 		@state.moveing? and @timebar.draw_timebar
+		
+		
+		#@debug.draw_text("#{mx} , #{my}", 0, 0, 2, 1.0, 1.0, Gosu::Color::WHITE)
 
-		
-		@debug.draw_text("#{mx} , #{my}", 0, 0, 2, 1.0, 1.0, Gosu::Color::WHITE)
-		
-		#@debug.draw_text("index? #{@team.index(mx,my)}", 0, 50, 2, 1.0, 1.0, Gosu::Color::WHITE)
+		#@debug.draw_text("center", 200, 100, 2, 1.0, 1.0, Gosu::Color::WHITE)
 
 	end
 	
@@ -165,6 +181,7 @@ class Game < Gosu::Window
 	def active_monster_skill(monsterOrder)
 		monsterId = @team.id(monsterOrder)
 		case monsterId
+			when 1224
 			when 1239
 				@board.all_transform
 				@board.enchante("_f")
@@ -194,9 +211,16 @@ class Game < Gosu::Window
 			atk *= map_leader_skill(leader1, m)
 			atk *= map_leader_skill(leader2, m)
 			atk *= @board.calculate_atk(m.attr)
-			m.update_atk(atk.round)
-			puts atk
-			puts atk.round
+			m.update_atk(atk.floor)
+		end
+	end
+	def calculate_re
+		leader1 = @team.first_leader
+		leader2 = @team.second_leader
+		@team.monsters.each do |m|
+			re = m.re
+			re *= @board.calculate_re
+			m.update_re(re.floor)
 		end
 	end
 end

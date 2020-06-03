@@ -9,6 +9,7 @@ class Timebar
 		@lifeclip = Image.new("image/Timebar/lifeclip.png",0,0,1)
 		
 		@basedtime = t
+		@extratime = 0
 		@temptime = 0.0
 		@clipsale = 0.8
 		
@@ -27,17 +28,20 @@ class Timebar
 		
 		@lifeclip.draw(1,@clipsale)
 		@heart.draw(@inonscale,@inonscale)
-		@font.draw_text("#{@currLife}/#{@maxLife}",180,290,2,1.0,1.0,Gosu::Color::YELLOW)
+		@font.draw_text("#{@currLife}/#{@maxLife}",320,290,2,1.0,1.0,Gosu::Color::YELLOW)
 	end
 
 	def draw_timebar
 		@timeclip.draw(1,@clipsale)
 		@clock.draw(@inonscale,@inonscale)
 	end
+	def draw_re(totalRe)
+		@font.draw_text("+#{totalRe}",200,290,2,1.0,1.0,Gosu::Color::YELLOW)
+	end
 	
 	def countdown(currtime)
-		@temptime < currtime and @temptime = currtime+@basedtime
-		difftime = 1.0-(@temptime-currtime)/@basedtime
+		@temptime < currtime and @temptime = currtime+@basedtime+@extratime
+		difftime = 1.0-(@temptime-currtime)/(@basedtime+@extratime)
 		@timeclip.set(@clock.w*@inonscale/2-difftime*@timeclip.w,@ybias-@timeclip.h)
 		# 倒數結束
 		return true if difftime > 0.98
@@ -45,6 +49,10 @@ class Timebar
 	
 	def reset_timebar
 		@temptime = 0.0
+	end
+	
+	def add_time(time)
+		@extratime = time
 	end
 	
 	private

@@ -1,8 +1,11 @@
 module DATA
 	MONSTER = {
-		1239 => {attr: '_f', race: '_g', star: 6, lv: 99, hp: 3209, atk: 1651, re: 314},
+		106 => {name: "蒼幽狼", attr: '_w', race: '_b' },
+		1224 => {name: "犬神護佑 ‧ 鈴子", attr: '_f', race: '_b', star: 6, lv: 99, hp: 3328, atk: 1528, re: 285},
+		1239 => {name: "變臉火術 ‧ 切西亞", attr: '_f', race: '_g', star: 6, lv: 99, hp: 3209, atk: 1651, re: 314},
 	}
 	AS = {
+		1224 => {name: '炙熱爪擊', charge: 'CD', num: 8, description: "將１０個固定位置的符石轉化：當中的火符石轉化為火強化符石，其他符石則轉化為火符石。１回合內，火屬性及獸類攻擊力２倍"},
 		1239 => {name: '三原靈陣 ‧ 血燄', charge: 'CD', num: 8, description: "所有符石隨機轉化為水、火、木及心符石，同時火符石出現率上升，並將火符石以火強化符石代替"},
 	}
 end
@@ -14,13 +17,14 @@ class Monster < Image
 		@order = order
 		@iconsize = 80
 		@ybias = 210
-		super "image/#{@id}.png",@order*@iconsize,@ybias,1
+		super "image/monster_icon/#{@id}.png",@order*@iconsize,@ybias,1
 		@font = Gosu::Font.new(25)
 		@sx,@sy = 50,350
 		
 		@num = DATA::AS[@id][:num]
 		@description = DATA::AS[@id][:description]
 		@currAtk = 0.0
+		@currRe = 0.0
 		
 		line_feed
 	end
@@ -45,17 +49,23 @@ class Monster < Image
 		@font.draw_text("#{@description}",@sx,@sy+50,3,1.0,1.0,Gosu::Color::YELLOW)
 	end
 	def draw_atk
-		@font.draw_text("#{@currAtk}",@x+5,@y+25,3,1.0,1.0,Gosu::Color::RED)
+		if @currAtk != 0
+			color = atk_font_color(attr)
+			@font.draw_text("#{@currAtk}",@x+5,@y+25,3,1.0,1.0,color)
+		end
 	end
 	def update_atk(atk)
 		@currAtk = atk
 	end
-
+	def update_re(re)
+		@currRe = re
+	end
 	def attr; DATA::MONSTER[@id][:attr]; end
 	def race; DATA::MONSTER[@id][:race]; end
 	def hp; DATA::MONSTER[@id][:hp]; end
 	def atk; DATA::MONSTER[@id][:atk]; end
 	def re; DATA::MONSTER[@id][:re]; end
+	def currRe; @currRe; end
 	def id; @id; end
 	def num; @num; end
 
@@ -73,6 +83,16 @@ class Monster < Image
 		}
 		@description = str
 	end
+	def atk_font_color(attr)
+		case attr
+			when "_w"; Gosu::Color::AQUA
+			when "_f"; Gosu::Color::RED
+			when "_e"; Gosu::Color::GREEN
+			when "_l"; Gosu::Color::YELLOW
+			when "_d"; Gosu::Color::FUCHSIA
+			else Gosu::Color::WHITE;
+		end
+	end
 end
 
 class Team
@@ -80,6 +100,8 @@ class Team
 		@monsters = []
 		@iconsize = 80
 		@ybias = 210
+		@temptime = 0
+		@damagespeed = 450
 		
 		@currLife,@maxLife = 0,0
 		init(ids)
@@ -103,21 +125,43 @@ class Team
 		@monsters[i].draw_skill if @monsters.at(i) != nil
 	end
 	def draw_icon
-		@monsters.each {|monster| monster.draw_icon}
+		@monsters.each {|m| m.draw_icon}
 	end
 	def draw_atk
 		@monsters.each {|m| m.draw_atk}
 	end
 	
 	def charge
-		@monsters.each {|monster| monster.dec_num}
+		@monsters.each {|m| m.dec_num}
 	end
 	def can_active?(i)
 		@monsters[i].can_active? if @monsters.at(i) != nil
 	end
 	def active(i)
 		@monsters[i].active if @monsters.at(i) != nil
-	end	
+	end
+	def damage_delay(currtime)
+		if @temptime < currtime
+			@temptime = currtime + @damagespeed
+		end
+	end
+	
+	def recovery
+		@currLife += total_re
+		@currLife = @maxLife if @currLife > @maxLife
+	end
+	def total_re
+		result = 0
+		@monsters.each {|m| result += m.currRe}
+		return result
+	end
+	
+	def take_damage(damages)
+		damages.each {|damage| @currLife -= damage}
+	end
+	def die?
+		@currLife <= 0
+	end
 	
 	def currLife; @currLife; end
 	def maxLife; @maxLife; end
@@ -127,7 +171,7 @@ class Team
 		ids.each_index {|i| @monsters << Monster.new(ids[i],i)}
 	end
 	def init_life
-		@monsters.each {|monster| @maxLife += monster.hp}
+		@monsters.each {|m| @maxLife += m.hp}
 		@currLife = @maxLife
 	end
 end
