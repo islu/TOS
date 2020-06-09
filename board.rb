@@ -31,12 +31,19 @@ class Board
 			"_w_set"=>0,"_f_set"=>0,"_e_set"=>0,"_l_set"=>0,"_d_set"=>0,"_h_set"=>0
 		}
 		
+		@possessHash = {}
+		
 		init
 	end
 	def record; @record; end
 	
-	def x_possess_y(x,y,prob=1.0)
-		puts "#{x}屬性兼具#{y}屬性#{prob*100}%"
+	def x_possess_y(x, y, prob=1.0)
+		if @possessHash.has_key?(y)
+			@possessHash[y] = @possessHash[y] << x
+		else
+			@possessHash[y] = [x]
+		end
+		#puts "#{x}屬性兼具#{y}屬性#{prob*100}%"
 	end
 	def dissolving_3_types?; dissolving_types == 3; end
 	def dissolving_types
@@ -58,7 +65,10 @@ class Board
 	def calculate_atk(attr)
 		comboMagn = 1 + (@combocounter-1)*@comboMagn
 		stoneMagn = @record[attr]*0.25 + @record[attr+"_en"]*0.4 + @record[attr+"_set"]*0.25
-		return comboMagn*stoneMagn
+		if @possessHash.has_key?(attr)
+			@possessHash[attr].each {|a| stoneMagn += @record[a]*0.25 + @record[a+"_en"]*0.4 + @record[a+"_set"]*0.25}
+		end
+		return comboMagn * stoneMagn
 	end
 
 	def drop_d_en
@@ -94,15 +104,9 @@ class Board
 	end
 	def all_transform
 		prob = ["_w","_f","_e","_f","_h"]
-		@stones.each do |stone|
-			attr = prob.sample
-			case attr
-				when "_w"; stone.transform_to_w
-				when "_f"; stone.transform_to_f
-				when "_e"; stone.transform_to_e
-				when "_h"; stone.transform_to_h
-			end
-			stone.update_img
+		@stones.each do |s|
+			s.transform_to_x(prob.sample)
+			s.update_img
 		end
 		return true
 	end
@@ -160,7 +164,7 @@ class Board
 	
 	def delete_combos(currtime)
 		if @temptime < currtime
-			@temptime = currtime+@deletspeed
+			@temptime = currtime + @deletspeed
 			delete
 		end
 	end

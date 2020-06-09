@@ -36,7 +36,9 @@ class Timebar
 		@clock.draw(@inonscale,@inonscale)
 	end
 	def draw_re(totalRe)
-		@font.draw_text("+#{totalRe}",200,290,2,1.0,1.0,Gosu::Color::YELLOW)
+		if totalRe != 0
+			@font.draw_text("+#{totalRe}",200,285,2,1.0,1.0,Gosu::Color.argb(0xff_1AFD9C))
+		end
 	end
 	
 	def countdown(currtime)

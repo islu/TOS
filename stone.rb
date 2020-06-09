@@ -64,6 +64,7 @@ class Stone < Image
 	def transform_to_l; @attr = "_l"; end
 	def transform_to_d; @attr = "_d"; end
 	def transform_to_h; @attr = "_h"; end
+	def transform_to_x(attr); @attr = attr; end
 	def transform_to_random; @attr = @attrlist.sample; end
 	#def transform_to_random_for(attrList); @attr = attrList.sample; end
 	

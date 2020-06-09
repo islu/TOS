@@ -11,7 +11,6 @@ module DATA
 end
 
 class Monster < Image
-	include DATA
 	def initialize(id,order)
 		@id = id
 		@order = order
@@ -21,8 +20,10 @@ class Monster < Image
 		@font = Gosu::Font.new(25)
 		@sx,@sy = 50,350
 		
+		@atkAttr = DATA::MONSTER[@id][:attr]
 		@num = DATA::AS[@id][:num]
 		@description = DATA::AS[@id][:description]
+		
 		@currAtk = 0.0
 		@currRe = 0.0
 		
@@ -50,7 +51,7 @@ class Monster < Image
 	end
 	def draw_atk
 		if @currAtk != 0
-			color = atk_font_color(attr)
+			color = atk_font_color(atkAttr)
 			@font.draw_text("#{@currAtk}",@x+5,@y+25,3,1.0,1.0,color)
 		end
 	end
@@ -60,12 +61,17 @@ class Monster < Image
 	def update_re(re)
 		@currRe = re
 	end
+	def reset
+		@currAtk,@currRe = 0,0
+	end
 	def attr; DATA::MONSTER[@id][:attr]; end
+	def atkAttr; @atkAttr; end
 	def race; DATA::MONSTER[@id][:race]; end
 	def hp; DATA::MONSTER[@id][:hp]; end
 	def atk; DATA::MONSTER[@id][:atk]; end
 	def re; DATA::MONSTER[@id][:re]; end
 	def currRe; @currRe; end
+	def currAtk; @currAtk; end
 	def id; @id; end
 	def num; @num; end
 
@@ -140,10 +146,8 @@ class Team
 	def active(i)
 		@monsters[i].active if @monsters.at(i) != nil
 	end
-	def damage_delay(currtime)
-		if @temptime < currtime
-			@temptime = currtime + @damagespeed
-		end
+	def reset
+		@monsters.each(&:reset)
 	end
 	
 	def recovery
@@ -153,6 +157,12 @@ class Team
 	def total_re
 		result = 0
 		@monsters.each {|m| result += m.currRe}
+		return result
+	end
+	
+	def damage
+		result = []
+		@monsters.each {|m| result << m.currAtk}
 		return result
 	end
 	

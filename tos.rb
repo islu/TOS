@@ -14,10 +14,12 @@ class BATTLE_STATE
     state :moveing,:deleting,:dropping,:checking,:attacking,:first_checking
 		state :first_deleting, :first_dropping
 		state :enemy_attacking
+		state :ending
 		
 		event :first_delete do; transitions from: :moveing, to: :first_deleting; end
 		event :first_drop do; transitions from: :first_deleting, to: :first_dropping; end
 		event :enemy_attack do; transitions from: :attacking, to: :enemy_attacking; end
+		event :end do; transitions from: :normal, to: :ending; end
 		
 		event :move do
 			transitions from: :normal, to: :moveing
@@ -57,10 +59,13 @@ class Game < Gosu::Window
 		#super 1200,720
 		self.caption = "ToS"
 		@board = Board.new
-		@team = Team.new([1239,1224,1239,1239,1239,1239])
+		@team = Team.new([1239,1239,1239,1239,1239,1239])
 		@timebar = Timebar.new(@team.maxLife)
 		@state = BATTLE_STATE.new
-		@floor = Floor.new(2)
+		@floor = Floor.new("遠洋的王者")
+		#@floor = Floor.new(2)
+		
+		@board.x_possess_y("_f","_h")
 		
 		@debug = Gosu::Font.new(25)
 		
@@ -78,6 +83,7 @@ class Game < Gosu::Window
 		if button_down?(Gosu::MS_LEFT) and @state.may_move?
 			if @board.stone?(mx,my)
 				@board.reset_combo_counter
+				@team.reset
 				@board.drag(mx,my)
 				@board.swap(mx,my) and @state.move
 			end
@@ -118,17 +124,18 @@ class Game < Gosu::Window
 			end
 		end
 		if @state.checking?
-			#if @board.explode_h
-			#	@state.drop and @board.search_dropping
-			#else
+			if @board.explode_h
+				@state.drop and @board.search_dropping
+			else
 				@state.attack
-			#end
+			end
 		end
 		
 		# 計算傷害
 		if @state.attacking?
 			@team.charge
 			@team.recovery
+			@floor.take_damage(@team.damage)
 			@state.enemy_attack
 		end
 		
@@ -137,17 +144,18 @@ class Game < Gosu::Window
 		end
 		
 		if @state.enemy_attacking?
-			@floor.cd_countdown
+			@floor.update
 			@team.take_damage(@floor.damage)
-			
+
 			@state.back
 		end
+		
+		@floor.all_clear? and @state.may_end? and @state.end
 		
 		!button_down?(Gosu::MS_LEFT) || @state.deleting? and @board.reset	
 		
 		!@state.moveing? and !@state.normal? and !@state.dropping? and calculate_atk & calculate_re
 		@timebar.update_life(@team.currLife)
-		@floor.update
 		# test
 		button_down?(Gosu::KB_Q) and @board.new
 		button_down?(Gosu::KB_R) and @state.back
@@ -160,6 +168,7 @@ class Game < Gosu::Window
 		@board.draw
 		
 		@floor.draw_enemys
+		@floor.draw_wave
 		
 		@team.draw_icon
 		@state.normal? and @team.monster?(mx,my) and @team.draw_skill(@team.index(mx,my))
@@ -170,6 +179,8 @@ class Game < Gosu::Window
 		!@state.moveing? and @timebar.draw_lifebar
 		@state.moveing? and @timebar.draw_timebar
 		
+		
+		@state.ending? and @debug.draw_text("all clear", 200, 100, 2, 1.0, 1.0, Gosu::Color::WHITE)
 		
 		#@debug.draw_text("#{mx} , #{my}", 0, 0, 2, 1.0, 1.0, Gosu::Color::WHITE)
 
