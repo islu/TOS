@@ -1,15 +1,38 @@
 class Enemy < Image
 	def initialize(x,y,id,atk,hp,dfs,cd,duration,characteristic)
+		@sx,@sy = 50,350
+		@font = Gosu::Font.new(25)
+		
 		@id = id
 		@atk,@hp,@dfs, = atk,hp,dfs
 		@cd,@duration = cd,duration
 		@characteristic = characteristic
-		@font = Gosu::Font.new(25)
+		@attr = DATA::MONSTER[@id][:attr]
+		@description = ENEMY::SKILL[@characteristic][:description]
+		@maxHp = hp.to_f
+		
 		super "image/monster/#{@id}n.png",x,y,1
+		
+		line_feed
 	end
 	def draw(sx=0.5, sy=0.5, color=0xff_ffffff)
 		@img.draw(@x,@y,@z,sx,sy,color)
-		@font.draw_text("#{@cd}",@x+@w/4+30,@y+@h/4,1,1.0,1.0,Gosu::Color::YELLOW)
+		if @h == 512
+			@font.draw_text("#{@cd}",@x+@w/4+65,@y+@h/4,3,1.0,1.0,Gosu::Color::YELLOW)
+		elsif @h == 256 
+			@font.draw_text("#{@cd}",@x+@w/4+35,@y+@h/4,3,1.0,1.0,Gosu::Color::YELLOW)
+		end
+		@font.draw_text("#{(@hp/@maxHp*100).ceil}%",@x+@w/4-25,@y+@h/2,1,1.0,1.0,atk_font_color(attr))
+	end
+	def hover?(mx,my)
+		@x<=mx && mx<=@x+@w/2 && @y+@h/2>my && my>@y
+	end
+	def draw_skill(mx,my)
+		if hover?(mx,my)
+			Gosu.draw_quad(@sx-25,@sy-25,Gosu::Color::GRAY,@sx+400,@sy-25,Gosu::Color::GRAY,@sx+400,@sy+200,Gosu::Color::BLACK,@sx-25,@sy+200,Gosu::Color::BLACK,3)
+			@font.draw_markup("#{DATA::MONSTER[@id][:name]} <c=00ff00>#{ENEMY::SKILL[@characteristic][:name]}</c>",@sx,@sy,3,1.0,1.0,Gosu::Color::YELLOW)
+			@font.draw_text("#{@description}",@sx,@sy+50,3,1.0,1.0,Gosu::Color::YELLOW)
+		end
 	end
 	def die?
 		@hp <= 0
@@ -33,6 +56,35 @@ class Enemy < Image
 	def damage
 		@atk
 	end
+	
+	def characteristic; @characteristic; end
+	def attr; @attr; end
+	
+	private
+	def line_feed(maxlen=20)
+		counter = 0
+		str = ""
+		@description.each_char {|c|
+			counter += 1
+			str += c
+			if counter == maxlen
+				str += "\n"
+				counter = 0
+			end
+		}
+		@description = str
+	end
+	def atk_font_color(attr)
+		case attr
+			when "_w"; Gosu::Color::AQUA
+			when "_f"; Gosu::Color::RED
+			when "_e"; Gosu::Color::GREEN
+			when "_l"; Gosu::Color::YELLOW
+			when "_d"; Gosu::Color::FUCHSIA
+			else Gosu::Color::WHITE;
+		end
+	end	
+
 end
 
 class Floor
@@ -82,6 +134,9 @@ class Floor
 	def cd_countdown
 		@enemys.each(&:dec)
 	end
+	
+	def enemys; @enemys; end
+	
 	def update
 		@enemys.delete_if(&:die?)
 		cd_countdown
@@ -91,7 +146,10 @@ class Floor
 		@enemys.each(&:draw)
 	end
 	def draw_wave
-		@font.draw_text("wave: #{@floor+1}",0,0,1,1.0,1.0,Gosu::Color::YELLOW)
+		@font.draw_text("wave: #{@floor+1} #{FLOOR_DATA::FLOOR[@id][:name]}",0,0,1,1.0,1.0,Gosu::Color::YELLOW)
+	end
+	def draw_skills(mx,my)
+		@enemys.each {|e| e.draw_skill(mx,my)}
 	end
 	private
 	
@@ -153,27 +211,3 @@ class Floor
 	end
 end
 
-module FLOOR_DATA
-  FLOOR = {
-		"遠洋的王者" => {
-			name: "符靈之主 地獄級",
-			setting: ["x", "x", "random1", "x", "x"],
-			waves: [
-				[{monsterId: 444, atk: 6877, CD: 1, duration: 1, hp: 18994, dfs: 10, characteristic: 100},{monsterId: 443, atk: 6041, CD: 1, duration: 1, hp: 39708, dfs: 40, characteristic: 150},{monsterId: 446, atk: 6221, CD: 2, duration: 2, hp: 29014, dfs: 30, characteristic: 50},{monsterId: 447, atk: 6356, CD: 2, duration: 2, hp: 61953, dfs: 60, characteristic: 123}],
-				[{monsterId: 137, atk: 4727, CD: 2, duration: 2, hp: 233936, dfs: 40, characteristic: 30},{monsterId: 140, atk: 4954, CD: 2, duration: 2, hp: 234159, dfs: 39, characteristic: 32},{monsterId: 131, atk: 4725, CD: 2, duration: 2, hp: 233823, dfs: 40, characteristic: 134}],
-				[{monsterId: 133, atk: 6270, CD: 1, duration: 1, hp: 640735, dfs: 606, characteristic: 1},{monsterId: 136, atk: 6690, CD: 1, duration: 1, hp: 629985, dfs: 594, characteristic: 1},{monsterId: 139, atk: 6273, CD: 1, duration: 1, hp: 643423, dfs: 600, characteristic: 1},{monsterId: 142, atk: 6687, CD: 1, duration: 1, hp: 646611, dfs: 579, characteristic: 1},{monsterId: 145, atk: 6690, CD: 1, duration: 1, hp: 640735, dfs: 582, characteristic: 1}],
-				[{monsterId: 439, atk: 10644, CD: 2, duration: 2, hp: 473500, dfs: 240, characteristic: 309},{monsterId: 442, atk: 9680, CD: 1, duration: 1, hp: 462800, dfs: 5250, characteristic: 147}],
-				[{monsterId: 448, atk: 10520, CD: 1, duration: 1, hp: 2058000, dfs: 9800, characteristic: 75}]
-			]
-		},
-		2 => {
-		name: "日蝕之子 地獄級",
-		setting: ["random2", "random3", "x", "x", "random3", "x"],
-		waves: [
-			[{monsterId: 106, atk: 6831, CD: 2, duration: 2, hp: 15, dfs: 20, characteristic: 0},{monsterId: 108, atk: 7624, CD: 2, duration: 2, hp: 12, dfs: 20, characteristic: 0},{monsterId: 110, atk: 7063, CD: 2, duration: 2, hp: 15, dfs: 20, characteristic: 0}],
-			[{monsterId: 106, atk: 6831, CD: 2, duration: 2, hp: 15, dfs: 20, characteristic: 0},{monsterId: 108, atk: 7624, CD: 2, duration: 2, hp: 12, dfs: 20, characteristic: 0},{monsterId: 110, atk: 7063, CD: 2, duration: 2, hp: 15, dfs: 20, characteristic: 0}],
-			[{monsterId: 113, atk: 8314, CD: 2, duration: 2, hp: 8, dfs: 39, characteristic: 57},{monsterId: 115, atk: 8579, CD: 2, duration: 2, hp: 9, dfs: 39, characteristic: 57}],
-		]},
- }
-
-end

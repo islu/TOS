@@ -1,6 +1,7 @@
 #coding: utf-8
 require 'gosu'
 require 'aasm'
+require_relative 'DATA'
 require_relative 'stone'
 require_relative 'board'
 require_relative 'timebar'
@@ -14,12 +15,13 @@ class BATTLE_STATE
     state :moveing,:deleting,:dropping,:checking,:attacking,:first_checking
 		state :first_deleting, :first_dropping
 		state :enemy_attacking
-		state :ending
+		state :finishing
 		
 		event :first_delete do; transitions from: :moveing, to: :first_deleting; end
 		event :first_drop do; transitions from: :first_deleting, to: :first_dropping; end
 		event :enemy_attack do; transitions from: :attacking, to: :enemy_attacking; end
-		event :end do; transitions from: :normal, to: :ending; end
+		event :finish do; transitions from: :normal, to: :finishing; end
+		event :idling do; transitions from: :deleting, to: :enemy_attacking; end
 		
 		event :move do
 			transitions from: :normal, to: :moveing
@@ -56,14 +58,12 @@ class Game < Gosu::Window
 	
 	def initialize
 		super 480,720
-		#super 1200,720
 		self.caption = "ToS"
 		@board = Board.new
 		@team = Team.new([1239,1239,1239,1239,1239,1239])
 		@timebar = Timebar.new(@team.maxLife)
 		@state = BATTLE_STATE.new
 		@floor = Floor.new("遠洋的王者")
-		#@floor = Floor.new(2)
 		
 		@board.x_possess_y("_f","_h")
 		
@@ -78,8 +78,7 @@ class Game < Gosu::Window
 		currtime = Gosu.milliseconds
 		
 		button_down?(Gosu::KB_ESCAPE) and exit
-		
-		# 轉珠前
+	
 		if button_down?(Gosu::MS_LEFT) and @state.may_move?
 			if @board.stone?(mx,my)
 				@board.reset_combo_counter
@@ -92,21 +91,19 @@ class Game < Gosu::Window
 				@team.can_active?(i) and active_monster_skill(i) & @team.active(i)
 			end
 		end
-		# 轉珠中
-		if button_down?(Gosu::MS_LEFT) and @state.moveing?
-			# 時間結束計算combo		
-			@timebar.countdown(currtime) and @state.delete and @board.check_combos
+		
+		if button_down?(Gosu::MS_LEFT) and @state.moveing?		
+			@timebar.countdown(currtime) and @state.delete and @board.check_combos and @board.all_delete? and @state.idling
 		end
 		if button_down?(Gosu::MS_LEFT) and @state.moveing? and @board.stone?(mx,my)
 			@board.drag(mx,my)
 			@board.swap(mx,my)
 		elsif !button_down?(Gosu::MS_LEFT) and @state.moveing?
 			@timebar.reset_timebar
-			# 放開後珠子計算combo
 			@board.check_combos
-			@state.delete
+			@state.delete and @board.all_delete? and @state.idling
 		end
-		# 刪除動畫
+		
 		if @state.deleting?
 			@board.all_delete? and @state.drop and @board.search_dropping
 			@board.delete_combos(currtime)
@@ -123,6 +120,7 @@ class Game < Gosu::Window
 				end
 			end
 		end
+		
 		if @state.checking?
 			if @board.explode_h
 				@state.drop and @board.search_dropping
@@ -131,26 +129,27 @@ class Game < Gosu::Window
 			end
 		end
 		
-		# 計算傷害
-		if @state.attacking?
-			@team.charge
-			@team.recovery
-			@floor.take_damage(@team.damage)
-			@state.enemy_attack
-		end
-		
 		if @state.first_checking?
 			@state.back
 		end
-		
+
+		if @state.attacking?
+			@team.charge
+			@team.recovery
+			map_enemys_skill(@floor.enemys)
+			@floor.take_damage(@team.damage)
+			@state.enemy_attack
+		end
+	
 		if @state.enemy_attacking?
 			@floor.update
 			@team.take_damage(@floor.damage)
+			map_enemys_skill(@floor.enemys)
 
 			@state.back
 		end
 		
-		@floor.all_clear? and @state.may_end? and @state.end
+		@floor.all_clear? and @state.may_finish? and @state.finish
 		
 		!button_down?(Gosu::MS_LEFT) || @state.deleting? and @board.reset	
 		
@@ -158,7 +157,7 @@ class Game < Gosu::Window
 		@timebar.update_life(@team.currLife)
 		# test
 		button_down?(Gosu::KB_Q) and @board.new
-		button_down?(Gosu::KB_R) and @state.back
+		button_down?(Gosu::KB_W) and @board.x_transform_y("_w", "_f")
 		
 	end
 	
@@ -169,6 +168,7 @@ class Game < Gosu::Window
 		
 		@floor.draw_enemys
 		@floor.draw_wave
+		@state.normal? and @floor.draw_skills(mx,my)
 		
 		@team.draw_icon
 		@state.normal? and @team.monster?(mx,my) and @team.draw_skill(@team.index(mx,my))
@@ -180,10 +180,9 @@ class Game < Gosu::Window
 		@state.moveing? and @timebar.draw_timebar
 		
 		
-		@state.ending? and @debug.draw_text("all clear", 200, 100, 2, 1.0, 1.0, Gosu::Color::WHITE)
+		@state.finishing? and @debug.draw_text("VICTORY !!!", 185, 100, 2, 1.0, 1.0, Gosu::Color::YELLOW)
 		
 		#@debug.draw_text("#{mx} , #{my}", 0, 0, 2, 1.0, 1.0, Gosu::Color::WHITE)
-
 		#@debug.draw_text("center", 200, 100, 2, 1.0, 1.0, Gosu::Color::WHITE)
 
 	end
@@ -214,6 +213,20 @@ class Game < Gosu::Window
 		end
 		return magn
 	end
+	
+	def map_enemys_skill(enemys)
+		enemys.each do |e|
+			case e.characteristic
+			when 75
+				if !@board.dissolving_wfe?
+					@team.monsters.each {|m| m.update_atk(1)}
+				end
+			when 100
+				@state.enemy_attacking? and @board.x_transform_y("_w", e.attr)
+			end
+		end
+	end
+	
 	def calculate_atk
 		leader1 = @team.first_leader
 		leader2 = @team.second_leader

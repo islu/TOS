@@ -7,6 +7,6 @@
 * `$ gem install aasm`
 * `$ ruby tos.rb`
 
-Thanks to Madhead! Nice game assets
+Image and sound belongs to the Madhead. 圖片以及音樂版權歸Madhead所有
 ## Demo
 ![demo1](demo1.png)

@@ -14,6 +14,9 @@ class Image
 	def pos
 		return @x,@y
 	end
+	def hover?(mx,my)
+		@x<=mx && mx<=@x+@w && @y+@h>my && my>@y
+	end
 	
 	def x; @x; end
 	def y; @y; end
@@ -42,6 +45,7 @@ class Stone < Image
 	def light?; @attr == "_l"; end
 	def dark?;  @attr == "_d"; end
 	def heart?; @attr == "_h"; end
+	def attr?(attr); @attr == attr; end
 	def enchante?; !@en == "_en"; end
 	
 	def drop; @y += 8; end

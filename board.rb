@@ -37,6 +37,15 @@ class Board
 	end
 	def record; @record; end
 	
+	def x_transform_y(x, y)
+		@stones.each {|s|
+			if s.attr?(x)
+				s.transform_to_x(y)
+				s.update_img
+			end
+		}
+	end
+	
 	def x_possess_y(x, y, prob=1.0)
 		if @possessHash.has_key?(y)
 			@possessHash[y] = @possessHash[y] << x
@@ -44,6 +53,20 @@ class Board
 			@possessHash[y] = [x]
 		end
 		#puts "#{x}屬性兼具#{y}屬性#{prob*100}%"
+	end
+	
+	def dissolving_ld?
+		count = 0
+		count +=1 if @record["_l"]!=0 || @record["_l_en"]!=0
+		count +=1 if @record["_d"]!=0 || @record["_d_en"]!=0
+		return count == 2
+	end
+	def dissolving_wfe?
+		count = 0
+		count +=1 if @record["_w"]!=0 || @record["_w_en"]!=0
+		count +=1 if @record["_f"]!=0 || @record["_f_en"]!=0
+		count +=1 if @record["_e"]!=0 || @record["_e_en"]!=0
+		return count == 3
 	end
 	def dissolving_3_types?; dissolving_types == 3; end
 	def dissolving_types

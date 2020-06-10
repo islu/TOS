@@ -1,15 +1,3 @@
-module DATA
-	MONSTER = {
-		106 => {name: "蒼幽狼", attr: '_w', race: '_b' },
-		1224 => {name: "犬神護佑 ‧ 鈴子", attr: '_f', race: '_b', star: 6, lv: 99, hp: 3328, atk: 1528, re: 285},
-		1239 => {name: "變臉火術 ‧ 切西亞", attr: '_f', race: '_g', star: 6, lv: 99, hp: 3209, atk: 1651, re: 314},
-	}
-	AS = {
-		1224 => {name: '炙熱爪擊', charge: 'CD', num: 8, description: "將１０個固定位置的符石轉化：當中的火符石轉化為火強化符石，其他符石則轉化為火符石。１回合內，火屬性及獸類攻擊力２倍"},
-		1239 => {name: '三原靈陣 ‧ 血燄', charge: 'CD', num: 8, description: "所有符石隨機轉化為水、火、木及心符石，同時火符石出現率上升，並將火符石以火強化符石代替"},
-	}
-end
-
 class Monster < Image
 	def initialize(id,order)
 		@id = id
@@ -46,7 +34,7 @@ class Monster < Image
 	end
 	def draw_skill
 		Gosu.draw_quad(@sx-25,@sy-25,Gosu::Color::GRAY,@sx+400,@sy-25,Gosu::Color::GRAY,@sx+400,@sy+200,Gosu::Color::FUCHSIA,@sx-25,@sy+200,Gosu::Color::FUCHSIA,3)
-		@font.draw_text("#{DATA::AS[@id][:name]}  #{@num}/#{DATA::AS[@id][:num]}",@sx,@sy,3,1.0,1.0,Gosu::Color::YELLOW)
+		@font.draw_markup("#{DATA::AS[@id][:name]}  <c=00ff00>#{@num}/#{DATA::AS[@id][:num]}</c>",@sx,@sy,3,1.0,1.0,Gosu::Color::YELLOW)
 		@font.draw_text("#{@description}",@sx,@sy+50,3,1.0,1.0,Gosu::Color::YELLOW)
 	end
 	def draw_atk
