@@ -1,12 +1,20 @@
-# ToS-Simulator
-[中文版-開發筆記](https://hackmd.io/@islu/S1EDMLBKI)
+# Tower of Saviors Simulator
 
-## Start!
-* `ruby 2.6+`
-* `$ gem install gosu`
-* `$ gem install aasm`
-* `$ ruby tos.rb`
+## Overview
 
-Image and sound belongs to the Madhead. 圖片以及音樂版權歸Madhead所有
-## Demo
-![demo1](demo1.png)
+![screenshot](screenshot.png)
+
+### Features
+
+- Simulate battles with various team setups
+
+## Requirements
+
+- Ruby 2.6 or later
+- `gosu` gem Getting Started on macOS
+- SDL2 library (required by `gosu`)
+
+Follow these steps to set up and run the project:
+1. `brew install sdl2`
+2. `bundle install`
+3. `ruby main.rb`
